@@ -1,1 +1,1 @@
-# my-sample-controller
+# k8s-crd-controller
