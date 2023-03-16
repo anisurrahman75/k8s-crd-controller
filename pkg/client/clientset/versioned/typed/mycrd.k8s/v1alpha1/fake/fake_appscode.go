@@ -36,9 +36,9 @@ type FakeAppsCodes struct {
 	ns   string
 }
 
-var appscodesResource = schema.GroupVersionResource{Group: "mycrd.k8s.k8s", Version: "v1alpha1", Resource: "appscodes"}
+var appscodesResource = schema.GroupVersionResource{Group: "mycrd.k8s", Version: "v1alpha1", Resource: "appscodes"}
 
-var appscodesKind = schema.GroupVersionKind{Group: "mycrd.k8s.k8s", Version: "v1alpha1", Kind: "AppsCode"}
+var appscodesKind = schema.GroupVersionKind{Group: "mycrd.k8s", Version: "v1alpha1", Kind: "AppsCode"}
 
 // Get takes name of the appsCode, and returns the corresponding appsCode object, and an error if there is any.
 func (c *FakeAppsCodes) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.AppsCode, err error) {

@@ -1,7 +1,7 @@
-apiVersion: appscodes.mycrd.k8s
+apiVersion: mycrd.k8s/v1alpha1
 kind: AppsCode
 metadata:
-  name: example-appscode
+  name: appscode
 spec:
   name: appscode
   replicas: 5

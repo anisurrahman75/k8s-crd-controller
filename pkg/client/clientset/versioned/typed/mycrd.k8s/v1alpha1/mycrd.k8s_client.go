@@ -31,7 +31,7 @@ type MycrdV1alpha1Interface interface {
 	AppsCodesGetter
 }
 
-// MycrdV1alpha1Client is used to interact with features provided by the mycrd.k8s.k8s group.
+// MycrdV1alpha1Client is used to interact with features provided by the mycrd.k8s group.
 type MycrdV1alpha1Client struct {
 	restClient rest.Interface
 }

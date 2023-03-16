@@ -56,5 +56,6 @@ func main() {
 	kubeInformationFactory.Start(stopCh)
 	exampleInformationFactory.Start(stopCh)
 	controller.Run(stopCh)
+	_ = controller
 
 }
