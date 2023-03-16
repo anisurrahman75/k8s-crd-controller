@@ -1,0 +1,10 @@
+apiVersion: appscodes.mycrd.k8s
+kind: AppsCode
+metadata:
+  name: example-appscode
+spec:
+  name: appscode
+  replicas: 5
+  image: nginx
+  port: 3000
+

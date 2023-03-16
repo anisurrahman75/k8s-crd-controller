@@ -10,7 +10,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
-	"log"
 	"path/filepath"
 	"time"
 )
@@ -56,8 +55,6 @@ func main() {
 	stopCh := make(chan struct{})
 	kubeInformationFactory.Start(stopCh)
 	exampleInformationFactory.Start(stopCh)
+	controller.Run(stopCh)
 
-	if err = controller.Run(2, stopCh); err != nil {
-		log.Println("Error running controller")
-	}
 }
