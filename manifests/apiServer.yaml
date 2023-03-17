@@ -3,7 +3,7 @@ kind: AppsCode
 metadata:
   name: appscode
 spec:
-  name: appscode
+  name: appsCodeDeploy
   replicas: 5
   image: nginx
   port: 3000

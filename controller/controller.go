@@ -1,10 +1,13 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	clientset "github.com/anisurrahman75/k8s-crd-controller/pkg/client/clientset/versioned"
 	informer "github.com/anisurrahman75/k8s-crd-controller/pkg/client/informers/externalversions/mycrd.k8s/v1alpha1"
 	lister "github.com/anisurrahman75/k8s-crd-controller/pkg/client/listers/mycrd.k8s/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"log"
@@ -125,12 +128,97 @@ func (c *Controller) ProcessNextItem() bool {
 	if shutdown {
 		return false
 	}
-
-	log.Println(obj)
-
+	// We wrap this block in a func so we can defer c.workqueue.Done.
+	err := func(obj interface{}) error {
+		// We call Done here so the workqueue knows we have finished
+		// processing this item. We also must remember to call Forget if we
+		// do not want this work item being re-queued. For example, we do
+		// not call Forget if a transient error occurs, instead the item is
+		// put back on the workqueue and attempted again after a back-off
+		// period.
+		defer c.workQueue.Done(obj)
+		var key string
+		var ok bool
+		// We expect strings to come off the workqueue. These are of the
+		// form namespace/name. We do this as the delayed nature of the
+		// workqueue means the items in the informer cache may actually be
+		// more up to date that when the item was initially put onto the
+		// workqueue.
+		if key, ok = obj.(string); !ok {
+			// As the item in the workqueue is actually invalid, we call
+			// Forget here else we'd go into a loop of attempting to
+			// process a work item that is invalid.
+			c.workQueue.Forget(obj)
+			utilruntime.HandleError(fmt.Errorf("expected string in workqueue but got %#v", obj))
+			return nil
+		}
+		// Run the syncHandler, passing it the namespace/name string of the
+		// AppsCode resource to be synced.
+		if err := c.syncHandler(key); err != nil {
+			// Put the item back on the workqueue to handle any transient errors.
+			c.workQueue.AddRateLimited(key)
+			return fmt.Errorf("error syncing '%s': %s, requeuing", key, err.Error())
+		}
+		// Finally, if no error occurs we Forget this item so it does not
+		// get queued again until another change happens.
+		c.workQueue.Forget(obj)
+		log.Println("Successfully synced", "resourceName", key)
+		return nil
+	}(obj)
 	if err != nil {
 		utilruntime.HandleError(err)
 		return true
 	}
 	return true
+}
+
+// syncHandler compares the actual state with the desired, and attempts to
+// converge the two. It then updates the Status block of the AppsCode resource
+// with the current status of the resource.
+// implement the business logic here.
+func (c *Controller) syncHandler(key string) error {
+	// Convert the namespace/name string into a distinct namespace and name
+	namespace, name, err := cache.SplitMetaNamespaceKey(key)
+	if err != nil {
+		utilruntime.HandleError(fmt.Errorf("invalid resource key: %s", key))
+		return nil
+	}
+
+	// Get the AppsCode Resources With this namespace/name
+	appsCode, err := c.appsCodeLister.AppsCodes(namespace).Get(name)
+
+	if err != nil {
+		// The AppsCode resource may no longer exist, in which case we stop processing.
+		if errors.IsNotFound(err) {
+			// We choose to absorb the error here as the worker would requeue the
+			// resource otherwise. Instead, the next time the resource is updated
+			// the resource will be queued again.
+			utilruntime.HandleError(fmt.Errorf("AppsCode '%s' in work queue no longer exists", key))
+			return nil
+		}
+		return err
+	}
+	deploymentName := appsCode.Spec.Name
+	log.Println("Deployments Name: ", deploymentName)
+	if deploymentName == "" {
+		// We choose to absorb the error here as the worker would requeue the
+		// resource otherwise. Instead, the next time the resource is updated
+		// the resource will be queued again.
+		utilruntime.HandleError(fmt.Errorf("%s : deployment name must be specified", key))
+		return nil
+	}
+	// Get the deployment with the name specified in appscode.spec
+	deployment, err := c.deploymentsLister.Deployments(namespace).Get(deploymentName)
+	// If the resource doesn't exist, we'll create it
+	if errors.IsNotFound(err) {
+		deployment, err = c.kubeclientset.AppsV1().Deployments(appsCode.Namespace).Create(context.TODO(), newDeployment(appsCode), metav1.CreateOptions{})
+	}
+	// If an error occurs during Get/Create, we'll requeue the item, so we can
+	// attempt processing again later. This could have been caused by a
+	// temporary network failure, or any other transient reason.
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
