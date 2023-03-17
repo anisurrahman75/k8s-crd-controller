@@ -3,19 +3,23 @@ package controller
 import (
 	"context"
 	"fmt"
+	controllerv1alpha1 "github.com/anisurrahman75/k8s-crd-controller/pkg/apis/mycrd.k8s/v1alpha1"
 	clientset "github.com/anisurrahman75/k8s-crd-controller/pkg/client/clientset/versioned"
 	informer "github.com/anisurrahman75/k8s-crd-controller/pkg/client/informers/externalversions/mycrd.k8s/v1alpha1"
 	lister "github.com/anisurrahman75/k8s-crd-controller/pkg/client/listers/mycrd.k8s/v1alpha1"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"log"
-	"time"
-
 	appsinformer "k8s.io/client-go/informers/apps/v1"
 	"k8s.io/client-go/kubernetes"
+
 	appslisters "k8s.io/client-go/listers/apps/v1"
+	"log"
+	"time"
 
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
@@ -75,6 +79,7 @@ func NewController(
 // enqueueAppsCode takes an AppsCode resource and converts it into a namespace/name
 // string which is then put onto the work queue. This method should *not* be
 // passed resources of any type other than AppsCode.
+// basically we are adding all of events, changes to the work-queue.
 func (c *Controller) enqueueAppsCode(obj interface{}) {
 	log.Println("Enqueueing AppsCode...")
 	key, err := cache.MetaNamespaceKeyFunc(obj)
@@ -120,6 +125,7 @@ func (c *Controller) Run(stopCh <-chan struct{}) error {
 // processNextWorkItem function in order to read and process a message on the workqueue.
 func (c *Controller) runWorker() {
 	for c.ProcessNextItem() {
+		fmt.Println()
 	}
 }
 func (c *Controller) ProcessNextItem() bool {
@@ -198,7 +204,7 @@ func (c *Controller) syncHandler(key string) error {
 		}
 		return err
 	}
-	deploymentName := appsCode.Spec.Name
+	deploymentName := appsCode.Name
 	log.Println("Deployments Name: ", deploymentName)
 	if deploymentName == "" {
 		// We choose to absorb the error here as the worker would requeue the
@@ -209,6 +215,7 @@ func (c *Controller) syncHandler(key string) error {
 	}
 	// Get the deployment with the name specified in appscode.spec
 	deployment, err := c.deploymentsLister.Deployments(namespace).Get(deploymentName)
+	_ = deployment
 	// If the resource doesn't exist, we'll create it
 	if errors.IsNotFound(err) {
 		deployment, err = c.kubeclientset.AppsV1().Deployments(appsCode.Namespace).Create(context.TODO(), newDeployment(appsCode), metav1.CreateOptions{})
@@ -219,6 +226,131 @@ func (c *Controller) syncHandler(key string) error {
 	if err != nil {
 		return err
 	}
+	// If this number of the replicas on the AppsCode resource is specified, and the
+	// number does not equal the current desired replicas on the Deployment, we
+	// should update the Deployment resource.
+	if appsCode.Spec.Replicas != nil && *appsCode.Spec.Replicas != *deployment.Spec.Replicas {
+		log.Printf("AppsCode %s replicas: %d, deployment replicas: %d\n", name, *appsCode.Spec.Replicas, *deployment.Spec.Replicas)
+
+		deployment, err = c.kubeclientset.AppsV1().Deployments(namespace).Update(context.TODO(), newDeployment(appsCode), metav1.UpdateOptions{})
+		// If an error occurs during Update, we'll requeue the item, so we can
+		// attempt processing again later. This could have been caused by a
+		// temporary network failure, or any other transient reason.
+		if err != nil {
+			return err
+		}
+	}
+	// Finally, we update the status block of the AppsCode resource to reflect the
+	// current state of the world
+	err = c.updateAppsCodeStatus(appsCode, deployment)
+	if err != nil {
+		return err
+	}
+
+	serviceName := appsCode.Name + "-service"
+	// Check if the Service is already exists or not
+	service, err := c.kubeclientset.CoreV1().Services(appsCode.Namespace).Get(context.TODO(), serviceName, metav1.GetOptions{})
+	if errors.IsNotFound(err) {
+		service, err := c.kubeclientset.CoreV1().Services(appsCode.Namespace).Create(context.TODO(), newService(appsCode), metav1.CreateOptions{})
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		log.Printf("\nservice %s created .....\n", service.Name)
+	} else if err != nil {
+		log.Println(err)
+	}
+	_, err = c.kubeclientset.CoreV1().Services(appsCode.Namespace).Update(context.TODO(), service, metav1.UpdateOptions{})
+	if err != nil {
+		log.Println(err)
+		return err
+	}
 
 	return nil
+}
+func (c *Controller) updateAppsCodeStatus(appsCode *controllerv1alpha1.AppsCode, deployment *appsv1.Deployment) error {
+
+	// NEVER modify objects from the store. It's a read-only, local cache.
+	// You can use DeepCopy() to make a deep copy of original object and modify this copy
+	// Or create a copy manually for better performance
+	appsCodeCopy := appsCode.DeepCopy()
+	appsCodeCopy.Status.AvailableReplicas = deployment.Status.AvailableReplicas
+
+	// If the CustomResourceSubresources feature gate is not enabled,
+	// we must use Update instead of UpdateStatus to update the Status block of the AppsCode resource.
+	// UpdateStatus will not allow changes to the Spec of the resource,
+	// which is ideal for ensuring nothing other than resource status has been updated.
+	_, err := c.sampleclientset.MycrdV1alpha1().AppsCodes(appsCode.Namespace).Update(context.TODO(), appsCodeCopy, metav1.UpdateOptions{})
+
+	return err
+}
+func newService(appsCode *controllerv1alpha1.AppsCode) *corev1.Service {
+	labels := map[string]string{
+		"app": "my-app",
+	}
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "Service",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: appsCode.Name + "-service",
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: labels,
+			Type:     corev1.ServiceTypeNodePort,
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "apiserver",
+					Port:       appsCode.Spec.Port,
+					TargetPort: intstr.FromInt(int(appsCode.Spec.Port)),
+					NodePort:   30040,
+					Protocol:   corev1.ProtocolTCP,
+				},
+			},
+		},
+	}
+}
+
+// newDeployment creates a new Deployment for a AppsCode resource. It also sets
+// the appropriate OwnerReferences on the resource so handleObject can discover
+// the AppsCode resource that 'owns' it.
+func newDeployment(appsCode *controllerv1alpha1.AppsCode) *appsv1.Deployment {
+	labels := map[string]string{
+		"app": "my-app",
+	}
+	return &appsv1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "Deployment",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      appsCode.Name,
+			Namespace: appsCode.Namespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: appsCode.Spec.Replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: labels,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: labels,
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "my-app",
+							Image: appsCode.Spec.Image,
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "http",
+									Protocol:      corev1.ProtocolTCP,
+									ContainerPort: appsCode.Spec.Port,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 }

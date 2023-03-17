@@ -186,7 +186,6 @@ type Clientset struct {
 	storageV1alpha1               *storagev1alpha1.StorageV1alpha1Client
 }
 
-
 // AdmissionregistrationV1 retrieves the AdmissionregistrationV1Client
 func (c *Clientset) AdmissionregistrationV1() admissionregistrationv1.AdmissionregistrationV1Interface {
 	return c.admissionregistrationV1

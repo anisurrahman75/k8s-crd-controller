@@ -10,6 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+	_ "k8s.io/client-go/util/retry"
 	"path/filepath"
 	"time"
 )
@@ -43,14 +44,13 @@ func main() {
 	exampleInformationFactory := informers.NewSharedInformerFactory(exampleClient, time.Second*30)
 	// From this informerfactory we can create specific informers for every group version resource
 	// that are default available in k8s environment such as Pods, deployment, etc
-	// podInformer := kubeInformationFactory.Core().V1().Pods()
+	//podInformer := kubeInformationFactory.Core().V1().Pods()
 
 	controller := Controller.NewController(
 		kubeClient,
 		exampleClient,
 		kubeInformationFactory.Apps().V1().Deployments(),
 		exampleInformationFactory.Mycrd().V1alpha1().AppsCodes())
-
 	// creating a unbuffered channel to synchronize the update
 	stopCh := make(chan struct{})
 	kubeInformationFactory.Start(stopCh)
