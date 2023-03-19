@@ -303,7 +303,7 @@ func newService(appsCode *controllerv1alpha1.AppsCode) *corev1.Service {
 					Name:       "apiserver",
 					Port:       appsCode.Spec.Port,
 					TargetPort: intstr.FromInt(int(appsCode.Spec.Port)),
-					NodePort:   30040,
+					NodePort:   appsCode.Spec.NodePort,
 					Protocol:   corev1.ProtocolTCP,
 				},
 			},

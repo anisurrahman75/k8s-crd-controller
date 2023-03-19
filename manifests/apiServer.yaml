@@ -7,4 +7,5 @@ spec:
   replicas: 2
   image: anisurrahman75/book-server-api:v1.4
   port: 3030
+  NodePort: 30040
 

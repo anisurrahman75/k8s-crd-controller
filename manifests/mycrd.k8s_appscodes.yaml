@@ -39,6 +39,9 @@ spec:
                 type: string
               name:
                 type: string
+              nodePort:
+                format: int32
+                type: integer
               port:
                 format: int32
                 type: integer
@@ -46,6 +49,9 @@ spec:
                 format: int32
                 type: integer
             required:
+            - image
+            - nodePort
+            - port
             - replicas
             type: object
           status:

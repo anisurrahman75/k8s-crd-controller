@@ -1,11 +1,11 @@
 apiVersion: mycrd.k8s/v1alpha1
 kind: AppsCode
 metadata:
-  name: b
+  name: c
 spec:
-  name: xx
+  name: yy
   replicas: 2
   image: anisurrahman75/book-server-api:v1.4
   port: 3030
-  nodePort: 30041
+  nodePort: 30042
 

@@ -31,8 +31,10 @@ type AppsCodeList struct {
 type AppsCodeSpec struct {
 	Name     string `json:"name,omitempty"`
 	Replicas *int32 `json:"replicas"`
-	Image    string `json:"image,omitempty"`
-	Port     int32  `json:"port,omitempty"`
+	Image    string `json:"image"`
+
+	Port     int32 `json:"port"`
+	NodePort int32 `json:"nodePort"`
 }
 
 // AppsCode Status Is the Status of the AppsCode Resources
