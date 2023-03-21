@@ -200,6 +200,26 @@ func (c *Controller) syncHandler(key string) error {
 			// resource otherwise. Instead, the next time the resource is updated
 			// the resource will be queued again.
 			utilruntime.HandleError(fmt.Errorf("AppsCode '%s' in work queue no longer exists", key))
+			// Delete Deployment
+			deletePolicy := metav1.DeletePropagationForeground
+			if err := c.kubeclientset.AppsV1().Deployments(namespace).Delete(context.TODO(), name, metav1.DeleteOptions{
+				PropagationPolicy: &deletePolicy,
+			}); err != nil {
+				utilruntime.HandleError(fmt.Errorf("Error on Deleteing Deployment :  '%s", key))
+				return nil
+			}
+			fmt.Println("Deleted deploymentn: ", name)
+			// Delete Service
+			svcName := name + "-service"
+			_ = svcName
+			if err := c.kubeclientset.CoreV1().Services(namespace).Delete(context.TODO(), svcName, metav1.DeleteOptions{
+				PropagationPolicy: &deletePolicy,
+			}); err != nil {
+				utilruntime.HandleError(fmt.Errorf("Error on Deleteing Service :  '%s", svcName))
+				return nil
+			}
+			fmt.Println("Deleted Service: ", svcName)
+
 			return nil
 		}
 		return err

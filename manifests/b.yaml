@@ -4,7 +4,7 @@ metadata:
   name: b
 spec:
   name: xx
-  replicas: 2
+  replicas: 5
   image: anisurrahman75/book-server-api:v1.4
   port: 3030
   nodePort: 30041
