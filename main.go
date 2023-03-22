@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	Controller "github.com/anisurrahman75/k8s-sampleController/controller"
 	clientset "github.com/anisurrahman75/k8s-sampleController/pkg/client/clientset/versioned"
 	informers "github.com/anisurrahman75/k8s-sampleController/pkg/client/informers/externalversions"
 	kubeinformers "k8s.io/client-go/informers"
@@ -43,20 +44,20 @@ func main() {
 	exampleInformationFactory := informers.NewSharedInformerFactory(exampleClient, time.Second*30)
 	_ = kubeInformationFactory
 	_ = exampleInformationFactory
-	// From this informerfactory we can create specific informers for every group version resource
-	// that are default available in k8s environment such as Pods, deployment, etc
+	//From this informerfactory we can create specific informers for every group version resource
+	//that are default available in k8s environment such as Pods, deployment, etc
 	//podInformer := kubeInformationFactory.Core().V1().Pods()
 
-	//controller := Controller.NewController(
-	//	kubeClient,
-	//	exampleClient,
-	//	kubeInformationFactory.Apps().V1().Deployments(),
-	//	exampleInformationFactory.Mycrd().V1alpha1().AppsCodes())
-	//// creating a unbuffered channel to synchronize the update
-	//stopCh := make(chan struct{})
-	//kubeInformationFactory.Start(stopCh)
-	//exampleInformationFactory.Start(stopCh)
-	//controller.Run(stopCh)
-	//_ = controller
+	controller := Controller.NewController(
+		kubeClient,
+		exampleClient,
+		kubeInformationFactory.Apps().V1().Deployments(),
+		exampleInformationFactory.Mycrd().V1alpha1().AppsCodes())
+	// creating a unbuffered channel to synchronize the update
+	stopCh := make(chan struct{})
+	kubeInformationFactory.Start(stopCh)
+	exampleInformationFactory.Start(stopCh)
+	controller.Run(stopCh)
+	_ = controller
 
 }
