@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"net/http"
 
-	mycrdv1alpha1 "github.com/anisurrahman75/k8s-crd-controller/pkg/client/clientset/versioned/typed/mycrd.k8s/v1alpha1"
+	mycrdv1alpha1 "github.com/anisurrahman75/k8s-sampleController/pkg/client/clientset/versioned/typed/mycrd.k8s/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

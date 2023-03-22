@@ -21,8 +21,8 @@ package v1alpha1
 import (
 	"net/http"
 
-	v1alpha1 "github.com/anisurrahman75/k8s-crd-controller/pkg/apis/mycrd.k8s/v1alpha1"
-	"github.com/anisurrahman75/k8s-crd-controller/pkg/client/clientset/versioned/scheme"
+	v1alpha1 "github.com/anisurrahman75/k8s-sampleController/pkg/apis/mycrd.k8s/v1alpha1"
+	"github.com/anisurrahman75/k8s-sampleController/pkg/client/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
 )
 

@@ -19,7 +19,7 @@ limitations under the License.
 package fake
 
 import (
-	v1alpha1 "github.com/anisurrahman75/k8s-crd-controller/pkg/client/clientset/versioned/typed/mycrd.k8s/v1alpha1"
+	v1alpha1 "github.com/anisurrahman75/k8s-sampleController/pkg/client/clientset/versioned/typed/mycrd.k8s/v1alpha1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )

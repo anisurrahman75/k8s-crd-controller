@@ -19,8 +19,8 @@ limitations under the License.
 package mycrd
 
 import (
-	internalinterfaces "github.com/anisurrahman75/k8s-crd-controller/pkg/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/anisurrahman75/k8s-crd-controller/pkg/client/informers/externalversions/mycrd.k8s/v1alpha1"
+	internalinterfaces "github.com/anisurrahman75/k8s-sampleController/pkg/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/anisurrahman75/k8s-sampleController/pkg/client/informers/externalversions/mycrd.k8s/v1alpha1"
 )
 
 // Interface provides access to each of this group's versions.

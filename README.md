@@ -1,4 +1,4 @@
-# k8s-crd-controller
+# k8s-sampleController
 
 
 This particular example demonstrates how to perform basic operations such as:

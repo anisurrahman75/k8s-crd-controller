@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	mycrd "github.com/anisurrahman75/k8s-crd-controller/pkg/apis/mycrd.k8s"
+	mycrd "github.com/anisurrahman75/k8s-sampleController/pkg/apis/mycrd.k8s"
 )
 
 // SchemeGroupVersion is group version used to register these objects

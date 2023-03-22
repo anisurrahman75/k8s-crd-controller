@@ -19,7 +19,7 @@ limitations under the License.
 package fake
 
 import (
-	mycrdv1alpha1 "github.com/anisurrahman75/k8s-crd-controller/pkg/apis/mycrd.k8s/v1alpha1"
+	mycrdv1alpha1 "github.com/anisurrahman75/k8s-sampleController/pkg/apis/mycrd.k8s/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

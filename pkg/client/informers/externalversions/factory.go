@@ -23,9 +23,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "github.com/anisurrahman75/k8s-crd-controller/pkg/client/clientset/versioned"
-	internalinterfaces "github.com/anisurrahman75/k8s-crd-controller/pkg/client/informers/externalversions/internalinterfaces"
-	mycrdk8s "github.com/anisurrahman75/k8s-crd-controller/pkg/client/informers/externalversions/mycrd.k8s"
+	versioned "github.com/anisurrahman75/k8s-sampleController/pkg/client/clientset/versioned"
+	internalinterfaces "github.com/anisurrahman75/k8s-sampleController/pkg/client/informers/externalversions/internalinterfaces"
+	mycrdk8s "github.com/anisurrahman75/k8s-sampleController/pkg/client/informers/externalversions/mycrd.k8s"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
