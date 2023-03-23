@@ -16,8 +16,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	appsinformer "k8s.io/client-go/informers/apps/v1"
 	"k8s.io/client-go/kubernetes"
-
 	appslisters "k8s.io/client-go/listers/apps/v1"
+	"k8s.io/client-go/tools/record"
 	"log"
 	"time"
 
@@ -43,6 +43,9 @@ type Controller struct {
 	// time, and makes it easy to ensure we are never processing the same item
 	// simultaneously in two different workers.
 	workQueue workqueue.RateLimitingInterface
+	// recorder is an event recorder for recording Event resources to the
+	// Kubernetes API.
+	recorder record.EventRecorder
 }
 
 // Controller is the controller implementation for AppsCode resources
@@ -125,7 +128,6 @@ func (c *Controller) Run(stopCh <-chan struct{}) error {
 // processNextWorkItem function in order to read and process a message on the workqueue.
 func (c *Controller) runWorker() {
 	for c.ProcessNextItem() {
-		fmt.Println()
 	}
 }
 func (c *Controller) ProcessNextItem() bool {
@@ -200,7 +202,10 @@ func (c *Controller) syncHandler(key string) error {
 			// resource otherwise. Instead, the next time the resource is updated
 			// the resource will be queued again.
 			utilruntime.HandleError(fmt.Errorf("AppsCode '%s' in work queue no longer exists", key))
-			// Delete Deployment
+
+			/*.....................................................................................
+			//Dont need this logic, beacuse of we can add owner reference on deployment and services
+			//Delete Deployment
 			deletePolicy := metav1.DeletePropagationForeground
 			if err := c.kubeclientset.AppsV1().Deployments(namespace).Delete(context.TODO(), name, metav1.DeleteOptions{
 				PropagationPolicy: &deletePolicy,
@@ -219,6 +224,7 @@ func (c *Controller) syncHandler(key string) error {
 				return nil
 			}
 			fmt.Println("Deleted Service: ", svcName)
+			............................................................................................*/
 
 			return nil
 		}
@@ -246,6 +252,7 @@ func (c *Controller) syncHandler(key string) error {
 	if err != nil {
 		return err
 	}
+
 	// If this number of the replicas on the AppsCode resource is specified, and the
 	// number does not equal the current desired replicas on the Deployment, we
 	// should update the Deployment resource.
@@ -314,6 +321,9 @@ func newService(appsCode *controllerv1alpha1.AppsCode) *corev1.Service {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: appsCode.Name + "-service",
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(appsCode, controllerv1alpha1.SchemeGroupVersion.WithKind("AppsCode")),
+			},
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: labels,
@@ -345,6 +355,9 @@ func newDeployment(appsCode *controllerv1alpha1.AppsCode) *appsv1.Deployment {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      appsCode.Name,
 			Namespace: appsCode.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(appsCode, controllerv1alpha1.SchemeGroupVersion.WithKind("AppsCode")),
+			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: appsCode.Spec.Replicas,
